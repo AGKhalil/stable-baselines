@@ -423,6 +423,8 @@ class PPO2(ActorCriticRLModel):
                 if update % n_checkpoints == 0:
                     self.saver.save(self.sess, self.graph_name, global_step=self.num_timesteps)
                     graph_name_csv = self.graph_name + '-' + str(self.num_timesteps) + '.csv'
+                    graph_name_sb = self.graph_name + '-' + str(self.num_timesteps)
+                    self.save(graph_name_sb)
                     with open(graph_name_csv, mode='w') as employee_file:
                         employee_writer = csv.writer(employee_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                         employee_writer.writerow(['r', 'l', 't'])

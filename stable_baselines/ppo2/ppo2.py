@@ -1,11 +1,14 @@
 import time
+import os
 import sys
 import multiprocessing
 from collections import deque
+import csv
 
 import gym
 import numpy as np
 import tensorflow as tf
+import datetime
 
 from stable_baselines import logger
 from stable_baselines.common import explained_variance, ActorCriticRLModel, tf_util, SetVerbosity, TensorboardWriter
@@ -112,6 +115,14 @@ class PPO2(ActorCriticRLModel):
                                                                "an instance of common.policies.ActorCriticPolicy."
 
             self.n_batch = self.n_envs * self.n_steps
+            self.checkpoint_inc = 39 * self.n_steps
+            self.timestamp = '{:%d%m%y_%H:%M:%S}'.format(datetime.datetime.now())
+            self.graph_dir = "tf_save/" + self.timestamp
+            os.makedirs(self.graph_dir, exist_ok=True)
+            self.graph_name = self.graph_dir + "/model"
+            self.plot_r = []
+            self.plot_l = []
+            self.plot_t = []
 
             n_cpu = multiprocessing.cpu_count()
             if sys.platform == 'darwin':
@@ -242,6 +253,8 @@ class PPO2(ActorCriticRLModel):
                 self.initial_state = act_model.initial_state
                 tf.global_variables_initializer().run(session=self.sess)  # pylint: disable=E1101
 
+                self.saver = tf.train.Saver(max_to_keep=999999)
+
                 self.summary = tf.summary.merge_all()
 
     def _train_step(self, learning_rate, cliprange, obs, returns, masks, actions, values, neglogpacs, update,
@@ -302,7 +315,7 @@ class PPO2(ActorCriticRLModel):
 
         return policy_loss, value_loss, policy_entropy, approxkl, clipfrac
 
-    def learn(self, total_timesteps, callback=None, seed=None, log_interval=1, tb_log_name="PPO2",
+    def learn(self, total_timesteps, callback=None, seed=None, log_interval=1, tb_log_name=None,
               reset_num_timesteps=True):
         # Transform to callable if needed
         self.learning_rate = get_schedule_fn(self.learning_rate)
@@ -310,6 +323,8 @@ class PPO2(ActorCriticRLModel):
         cliprange_vf = get_schedule_fn(self.cliprange_vf)
 
         new_tb_log = self._init_num_timesteps(reset_num_timesteps)
+
+        tb_log_name = self.timestamp
 
         with SetVerbosity(self.verbose), TensorboardWriter(self.graph, self.tensorboard_log, tb_log_name, new_tb_log) \
                 as writer:
@@ -322,6 +337,7 @@ class PPO2(ActorCriticRLModel):
             t_first_start = time.time()
 
             n_updates = total_timesteps // self.n_batch
+            n_checkpoints = self.checkpoint_inc // self.n_batch
             for update in range(1, n_updates + 1):
                 assert self.n_batch % self.nminibatches == 0
                 batch_size = self.n_batch // self.nminibatches
@@ -399,6 +415,19 @@ class PPO2(ActorCriticRLModel):
                     if callback(locals(), globals()) is False:
                         break
 
+                for ep_info in ep_infos:
+                    self.plot_l.append(ep_info['l'])
+                    self.plot_r.append(ep_info['r'])
+                    self.plot_t.append(ep_info['t'])
+
+                if update % n_checkpoints == 0:
+                    self.saver.save(self.sess, self.graph_name, global_step=self.num_timesteps)
+                    graph_name_csv = self.graph_name + '-' + str(self.num_timesteps) + '.csv'
+                    with open(graph_name_csv, mode='w') as employee_file:
+                        employee_writer = csv.writer(employee_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                        employee_writer.writerow(['r', 'l', 't'])
+                        for i in range(len(self.plot_l)):
+                            employee_writer.writerow([self.plot_r[i], self.plot_l[i], self.plot_t[i]])
             return self
 
     def save(self, save_path):

@@ -420,25 +420,20 @@ class PPO2(ActorCriticRLModel):
                     self.plot_r.append(ep_info['r'])
                     self.plot_t.append(ep_info['t'])
 
-                print('LOGGER: ppo_before_saver')
                 if update % n_checkpoints == 0:
                     checkpoint = 'model-' + str(self.num_timesteps)
                     checkpoint_log = self.graph_dir + '/checkpoint'
                     with open(checkpoint_log, mode='a') as employee_file:
                         employee_writer = csv.writer(employee_file)
                         employee_writer.writerow([checkpoint])
-                    print('LOGGER: ppo_after_saver')
                     graph_name_csv = self.graph_name + '-' + str(self.num_timesteps) + '.csv'
                     graph_name_sb = self.graph_name + '-' + str(self.num_timesteps)
-                    print('LOGGER: ppo_before_save')
                     self.save(graph_name_sb)
-                    print('LOGGER: ppo_after_save')
                     with open(graph_name_csv, mode='w') as employee_file:
                         employee_writer = csv.writer(employee_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                         employee_writer.writerow(['r', 'l', 't'])
                         for i in range(len(self.plot_l)):
                             employee_writer.writerow([self.plot_r[i], self.plot_l[i], self.plot_t[i]])
-                    print('LOGGER: ppo_after_log')
             return self
 
     def save(self, save_path):

@@ -461,7 +461,7 @@ def load_state(fname, sess=None, var_list=None):
     saver.restore(sess, fname)
 
 
-def save_state(fname, sess=None, var_list=None):
+def save_state(fname, global_step, sess=None, var_list=None):
     """
     Save a TensorFlow model
 
@@ -481,7 +481,7 @@ def save_state(fname, sess=None, var_list=None):
     os.makedirs(dir_name, exist_ok=True)
 
     saver = tf.train.Saver(var_list=var_list)
-    saver.save(sess, fname)
+    saver.save(sess, fname, global_step=global_step)
 
 
 # ================================================================

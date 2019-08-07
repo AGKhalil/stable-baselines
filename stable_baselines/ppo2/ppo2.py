@@ -422,8 +422,11 @@ class PPO2(ActorCriticRLModel):
 
                 print('LOGGER: ppo_before_saver')
                 if update % n_checkpoints == 0:
-                    tf_util.save_state(self.graph_name, self.num_timesteps, var_list=tf.all_variables(), sess=self.sess)
-                    # self.saver.save(self.sess, self.graph_name, global_step=self.num_timesteps)
+                    checkpoint = 'model-' + str(self.num_timesteps)
+                    checkpoint_log = self.graph_dir + '/checkpoint'
+                    with open(checkpoint_log, mode='a') as employee_file:
+                        employee_writer = csv.writer(employee_file)
+                        employee_writer.writerow([checkpoint])
                     print('LOGGER: ppo_after_saver')
                     graph_name_csv = self.graph_name + '-' + str(self.num_timesteps) + '.csv'
                     graph_name_sb = self.graph_name + '-' + str(self.num_timesteps)

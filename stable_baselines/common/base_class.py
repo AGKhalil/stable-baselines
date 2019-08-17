@@ -678,7 +678,7 @@ class ActorCriticRLModel(BaseRLModel):
         pass
 
     @classmethod
-    def load(cls, load_path, env=None, **kwargs):
+    def load(cls, load_path, og_dir=None, drive=None, env=None, **kwargs):
         """
         Load the model from file
 
@@ -694,7 +694,7 @@ class ActorCriticRLModel(BaseRLModel):
                              "Stored kwargs: {}, specified kwargs: {}".format(data['policy_kwargs'],
                                                                               kwargs['policy_kwargs']))
 
-        model = cls(policy=data["policy"], env=None, _init_setup_model=False, verbose=0, tensorboard_log="./tensorboard_log/") 
+        model = cls(policy=data["policy"], env=None, _init_setup_model=False, verbose=0, tensorboard_log="./tensorboard_log/", drive=drive, og_dir=og_dir) 
         model.__dict__.update(data)
         model.__dict__.update(kwargs)
         model.set_env(env)

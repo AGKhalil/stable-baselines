@@ -15,7 +15,7 @@ from stable_baselines.common import explained_variance, ActorCriticRLModel, tf_u
 from stable_baselines.common.runners import AbstractEnvRunner
 from stable_baselines.common.policies import ActorCriticPolicy, RecurrentActorCriticPolicy
 from stable_baselines.a2c.utils import total_episode_reward_logger
-
+from stable_baselines.common import pydrive_util
 
 class PPO2(ActorCriticRLModel):
     """
@@ -50,7 +50,7 @@ class PPO2(ActorCriticRLModel):
         WARNING: this logging can take a lot of space quickly
     """
 
-    def __init__(self, policy, env, gamma=0.99, n_steps=128, ent_coef=0.01, learning_rate=2.5e-4, vf_coef=0.5,
+    def __init__(self, policy, env, drive, og_dir, gamma=0.99, n_steps=128, ent_coef=0.01, learning_rate=2.5e-4, vf_coef=0.5,
                  max_grad_norm=0.5, lam=0.95, nminibatches=4, noptepochs=4, cliprange=0.2, cliprange_vf=None,
                  verbose=0, tensorboard_log=None, _init_setup_model=True, policy_kwargs=None,
                  full_tensorboard_log=False):
@@ -71,6 +71,8 @@ class PPO2(ActorCriticRLModel):
         self.noptepochs = noptepochs
         self.tensorboard_log = tensorboard_log
         self.full_tensorboard_log = full_tensorboard_log
+        self.drive = drive
+        self.og_dir = og_dir
 
         self.graph = None
         self.sess = None
@@ -118,6 +120,7 @@ class PPO2(ActorCriticRLModel):
             self.checkpoint_inc = 39 * self.n_steps
             self.model_name = '{:%d%m%y_%H:%M:%S}'.format(datetime.datetime.now())
             self.graph_dir = "tf_save/" + self.model_name
+            self.checkpoint_log = self.graph_dir + '/checkpoint'
             os.makedirs(self.graph_dir, exist_ok=True)
             self.graph_name = self.graph_dir + "/model"
             self.plot_r = []
@@ -422,18 +425,19 @@ class PPO2(ActorCriticRLModel):
 
                 if update % n_checkpoints == 0:
                     checkpoint = 'model-' + str(self.num_timesteps)
-                    checkpoint_log = self.graph_dir + '/checkpoint'
-                    with open(checkpoint_log, mode='a') as employee_file:
+                    with open(self.checkpoint_log, mode='a') as employee_file:
                         employee_writer = csv.writer(employee_file)
                         employee_writer.writerow([checkpoint])
                     graph_name_csv = self.graph_name + '-' + str(self.num_timesteps) + '.csv'
-                    graph_name_sb = self.graph_name + '-' + str(self.num_timesteps)
+                    graph_name_sb = self.graph_name + '-' + str(self.num_timesteps) + '.pkl'
                     self.save(graph_name_sb)
                     with open(graph_name_csv, mode='w') as employee_file:
                         employee_writer = csv.writer(employee_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                         employee_writer.writerow(['r', 'l', 't'])
                         for i in range(len(self.plot_l)):
                             employee_writer.writerow([self.plot_r[i], self.plot_l[i], self.plot_t[i]])
+                    pydrive_util.upload_file(self.drive, graph_name_sb)
+                    pydrive_util.upload_file(self.drive, graph_name_csv)
             return self
 
     def save(self, save_path):

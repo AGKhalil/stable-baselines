@@ -117,7 +117,7 @@ class PPO2(ActorCriticRLModel):
             self.n_batch = self.n_envs * self.n_steps
             self.checkpoint_inc = 39 * self.n_steps
             self.model_name = '{:%d%m%y_%H:%M:%S}'.format(datetime.datetime.now())
-            self.graph_dir = "tf_save/" + self.model_name
+            self.graph_dir = "/media/brl/Seagate Expansion Drive1/khalil/tf_save/" + self.model_name
             os.makedirs(self.graph_dir, exist_ok=True)
             self.graph_name = self.graph_dir + "/model"
             self.plot_r = []
